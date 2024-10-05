@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Player+2&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <title>Endless Encyclopedia Online</title>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <h1>Endless Encyclopedia Online</h1>
+        </div>
+        <button class="menu-btn" onclick="toggleMenu()">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </button>
+    </header>
+
+    <nav id="nav-menu">
+        <button class="close-btn" onclick="toggleMenu()">×</button>
+        <ul>
+            <li><a href="#welcome">Welcome</a></li>
+            <li><a href="#videos">Videos</a></li>
+            <li><a href="#gallery">Gallery</a></li>
+            <li><a
+href="database.html">EOData Base</a></li>
+        </ul>
+    </nav>
+
+    <div id="welcome" class="section">
+        <div class="content-box">
+            <h2>Welcome to Endless Encyclopedia Online!</h2>
+            <p>Explore the world of Endless Online and share your experiences.</p>
+        </div>
+    </div>
+
+    <div id="videos" class="section">
+        <div class="content-box">
+            <h2>Video Section</h2>
+            <input type="text" id="video-search" placeholder="Search Videos" oninput="filterVideos()">
+            <div id="video-list" class="video-container"></div>
+        </div>
+    </div>
+
+    <div id="gallery" class="section">
+        <div class="content-box">
+            <h2>Photo Gallery</h2>
+            <div class="gallery-container">
+                <!-- Add your gallery items here -->
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Endless Encyclopedia Online. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

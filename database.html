@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://fonts.googleapis.com/css2?family=Player+2&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="styles.css">
+
+    <link rel="stylesheet" href="styles.css"> <!-- Assuming the previous CSS is in a file named styles.css -->
+    <style>
+        /* ... (previous styles remain the same) ... */
+        .map-image {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+        #update-status {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #77b2f0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+                <title>Endless Encyclopedia Online</title>
+    </head>
+    <body>
+        <header><div></div>
+            <div class="logo">
+                <h1>Endless Encyclopedia Online</h1>
+            </div>
+            <button class="menu-btn" onclick="toggleMenu()">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </button>
+        </header>
+
+        <nav id="nav-menu">
+            <button class="close-btn" onclick="toggleMenu()">×</button>
+            <ul>
+                <li><a href="index.html#welcome">Welcome</a></li>
+                <li><a href="index.html#videos">Videos</a></li>
+                <li><a href="index.html#gallery">Gallery</a></li>
+                <li><a
+    href="database.html">EOData Base</a></li>
+            </ul>
+        </nav>
+        </div>
+    </header>
+
+    <div id="update-status"></div>
+
+    <main>
+        <section class="section" id="npc-section">
+            <h2>NPCs</h2>
+            <div class="search-container">
+                <input type="text" id="npc-search" placeholder="Search NPCs...">
+            </div>
+            <select id="npc-dropdown"></select>
+            <div class="api-section" id="npc-data"></div>
+        </section>
+
+        <section class="section" id="spell-section">
+            <h2>Spells</h2>
+            <div class="search-container">
+                <input type="text" id="spell-search" placeholder="Search Spells...">
+            </div>
+            <select id="spell-dropdown"></select>
+            <div class="api-section" id="spell-data"></div>
+        </section>
+
+        <section class="section" id="quest-section">
+            <h2>Quests</h2>
+            <div class="search-container">
+                <input type="text" id="quest-search" placeholder="Search Quests...">
+            </div>
+            <select id="quest-dropdown"></select>
+            <div class="api-section" id="quest-data"></div>
+        </section>
+
+        <section class="section" id="map-section">
+            <h2>Maps</h2>
+            <select id="map-dropdown"></select>
+            <div class="api-section" id="map-data"></div>
+        </section>
+    </main>
+
+    <script>
+        const apiBaseUrl = 'https://eor-api.exile-studios.com/api';
+        const updateInterval = 48 * 60 * 60 * 1000; // 48 hours in milliseconds
+        let npcsData, spellsData, questsData, mapsData;
+
+        async function fetchData(endpoint) {
+            const response = await fetch(`${apiBaseUrl}${endpoint}`);
+            return response.json();
+        }
+
+        async function updateLocalData() {
+            try {
+                npcsData = await fetchData('/npcs/dump');
+                spellsData = await fetchData('/spells/dump');
+                questsData = await fetchData('/quests/dump');
+                mapsData = await fetchData('/maps/dump');
+
+                localStorage.setItem('npcsData', JSON.stringify(npcsData));
+                localStorage.setItem('spellsData', JSON.stringify(spellsData));
+                localStorage.setItem('questsData', JSON.stringify(questsData));
+                localStorage.setItem('mapsData', JSON.stringify(mapsData));
+                localStorage.setItem('lastUpdate', Date.now().toString());
+
+                document.getElementById('update-status').textContent = 'Data updated successfully';
+            } catch (error) {
+                console.error('Error updating data:', error);
+                document.getElementById('update-status').textContent = 'Error updating data. Using local data if available.';
+            }
+        }
+
+        function loadLocalData() {
+            npcsData = JSON.parse(localStorage.getItem('npcsData') || '[]');
+            spellsData = JSON.parse(localStorage.getItem('spellsData') || '[]');
+            questsData = JSON.parse(localStorage.getItem('questsData') || '[]');
+            mapsData = JSON.parse(localStorage.getItem('mapsData') || '[]');
+        }
+
+        function populateDropdown(data, dropdownId, displayProperty = 'name') {
+            const dropdown = document.getElementById(dropdownId);
+            dropdown.innerHTML = '<option value="">Select an item</option>';
+            data.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = item[displayProperty];
+                dropdown.appendChild(option);
+            });
+        }
+
+        function displayItem(item, containerId, type) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            const itemElement = document.createElement('div');
+            itemElement.className = 'api-item';
+
+            let content = `
+                <h3>${item.name}</h3>
+                <p>ID: ${item.id}</p>
+            `;
+
+            switch (type) {
+                case 'npc':
+                    content += `<p>Level: ${item.level}</p>`;
+                    break;
+                case 'spell':
+                    content += `
+                        <p>Description: ${item.description || 'N/A'}</p>
+                        <p>Mana Cost: ${item.mana_cost}</p>
+                    `;
+                    break;
+                case 'quest':
+                    content += `
+                        <p>Description: ${item.description || 'N/A'}</p>
+                        <p>Required Level: ${item.required_level}</p>
+                        <p>Location: ${item.location || 'N/A'}</p>
+                    `;
+                    break;
+                case 'map':
+                    content += `<p>Description: ${item.description || 'N/A'}</p>`;
+                    break;
+            }
+
+            itemElement.innerHTML = content;
+            container.appendChild(itemElement);
+
+            if (type === 'npc' || type === 'spell') {
+                fetchAndDisplayImage(item.id, type, itemElement);
+            } else if (type === 'map') {
+                fetchAndDisplayMapImage(item.id, itemElement);
+            }
+        }
+
+        async function fetchAndDisplayImage(id, type, container) {
+            try {
+                const endpoint = type === 'npc' ? `/npcs/${id}/graphic` : `/spells/${id}/icon`;
+                const response = await fetch(`${apiBaseUrl}${endpoint}`);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.alt = `${type} image`;
+                    container.appendChild(img);
+                }
+            } catch (error) {
+                console.error(`Error fetching ${type} image:`, error);
+            }
+        }
+
+        async function fetchAndDisplayMapImage(id, container) {
+            try {
+                const response = await fetch(`${apiBaseUrl}/maps/${id}/image`);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.alt = 'Map image';
+                    img.className = 'map-image';
+                    container.appendChild(img);
+                } else {
+                    console.error('Map image not found');
+                    container.innerHTML += '<p>Map image not available</p>';
+                }
+            } catch (error) {
+                console.error('Error fetching map image:', error);
+                container.innerHTML += '<p>Error loading map image</p>';
+            }
+        }
+
+        function setupSearch(data, searchId, displayFunction, type) {
+            const searchInput = document.getElementById(searchId);
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filteredData = data.filter(item => 
+                    item.name.toLowerCase().includes(searchTerm) ||
+                    (item.description && item.description.toLowerCase().includes(searchTerm))
+                );
+                displayFunction(filteredData, type);
+            });
+        }
+
+        function setupDropdown(dropdownId, data, displayFunction, type) {
+            const dropdown = document.getElementById(dropdownId);
+            dropdown.addEventListener('change', (e) => {
+                const selectedId = e.target.value;
+                if (selectedId) {
+                    const selectedItem = data.find(item => item.id.toString() === selectedId);
+                    if (selectedItem) {
+                        displayItem(selectedItem, `${type}-data`, type);
+                    }
+                } else {
+                    document.getElementById(`${type}-data`).innerHTML = '';
+                }
+            });
+        }
+
+        function initializeUI() {
+            populateDropdown(npcsData, 'npc-dropdown');
+            populateDropdown(spellsData, 'spell-dropdown');
+            populateDropdown(questsData, 'quest-dropdown');
+            populateDropdown(mapsData, 'map-dropdown');
+
+            setupSearch(npcsData, 'npc-search', displayNPCs, 'npc');
+            setupSearch(spellsData, 'spell-search', displaySpells, 'spell');
+            setupSearch(questsData, 'quest-search', displayQuests, 'quest');
+
+            setupDropdown('npc-dropdown', npcsData, displayItem, 'npc');
+            setupDropdown('spell-dropdown', spellsData, displayItem, 'spell');
+            setupDropdown('quest-dropdown', questsData, displayItem, 'quest');
+            setupDropdown('map-dropdown', mapsData, displayItem, 'map');
+        }
+
+        function displayNPCs(npcs, type = 'npc') {
+            const container = document.getElementById('npc-data');
+            container.innerHTML = '';
+            npcs.slice(0, 10).forEach(npc => displayItem(npc, 'npc-data', type));
+        }
+
+        function displaySpells(spells, type = 'spell') {
+            const container = document.getElementById('spell-data');
+            container.innerHTML = '';
+            spells.slice(0, 10).forEach(spell => displayItem(spell, 'spell-data', type));
+        }
+
+        function displayQuests(quests, type = 'quest') {
+            const container = document.getElementById('quest-data');
+            container.innerHTML = '';
+            quests.slice(0, 10).forEach(quest => displayItem(quest, 'quest-data', type));
+        }
+
+        async function initializeData() {
+            const lastUpdate = localStorage.getItem('lastUpdate');
+            const currentTime = Date.now();
+
+            if (!lastUpdate || (currentTime - parseInt(lastUpdate)) > updateInterval) {
+                await updateLocalData();
+            } else {
+                loadLocalData();
+                document.getElementById('update-status').textContent = 'Using local data. Next update in ' + 
+                    Math.round((updateInterval - (currentTime - parseInt(lastUpdate))) / (1000 * 60 * 60)) + ' hours.';
+            }
+
+            initializeUI();
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', initializeData);
+
+        // Set up periodic update check
+        setInterval(async () => {
+            const lastUpdate = localStorage.getItem('lastUpdate');
+            const currentTime = Date.now();
+            if ((currentTime - parseInt(lastUpdate)) > updateInterval) {
+                await updateLocalData();
+                initializeUI();
+            }
+        }, 60 * 60 * 1000); // Check every hour
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
